@@ -25,13 +25,6 @@ while true ; do
             # Change qBittorrent port
             qbittorrent --torrenting-port=$mapped_port
 
-            # Wait for qBittorrent to start
-            sleep 5
-
-            # Set the window position and workspace
-            wmctrl -r 'qBittorrent' -e 0,0,0,1920,1080 # Adjust the values as per your screen resolution
-            wmctrl -r 'qBittorrent' -t 3 # Set workspace to 1 (you can change it to your desired workspace)
-
             # Update the previous mapped port
             previous_mapped_port="$mapped_port"
         else
