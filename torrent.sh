@@ -1,11 +1,51 @@
 #!/usr/bin/env bash
 
-# Check if qbittorrent-nox is installed
-if ! command -v qbittorrent &> /dev/null; then
-    echo "Error: qbittorrent is not installed. Installing..."
-    sudo dnf install -y qbittorrent
-    exit 1
-fi
+# Function to check if qbittorrent is installed and install if not
+install_qbittorrent() {
+    if command -v qbittorrent &> /dev/null; then
+        return 0  # qbittorrent is already installed
+    fi
+    
+    echo "Error: qbittorrent is not installed."
+    
+    # Check if qbittorrent is available on flatpak
+    if command -v flatpak &> /dev/null; then
+        echo "Do you want to install qBittorrent via Flatpak? (y/n)"
+        read choice
+        if [ "$choice" == "y" ]; then
+            flatpak install flathub org.qbittorrent.qBittorrent
+            return $?
+        fi
+    fi
+    
+    # Check if qbittorrent is available on the package manager
+    if command -v sudo &> /dev/null; then
+        echo "Do you want to install qBittorrent via your package manager? (y/n)"
+        read choice
+        if [ "$choice" == "y" ]; then
+            sudo dnf install -y qbittorrent  # Change this line as needed for your package manager
+            return $?
+        fi
+    fi
+    
+    echo "Error: Could not find a suitable method to install qbittorrent."
+    return 1
+}
+
+# Function to get the qBittorrent command for changing torrenting port
+get_qbittorrent_command() {
+    if command -v flatpak &> /dev/null && flatpak list | grep -q org.qbittorrent.qBittorrent; then
+        echo "flatpak run org.qbittorrent.qBittorrent --torrenting-port="
+    elif command -v qbittorrent &> /dev/null; then
+        echo "qbittorrent --torrenting-port="
+    else
+        echo "Error: qBittorrent is not installed."
+        return 1
+    fi
+}
+
+# Check and install qbittorrent
+install_qbittorrent || exit 1
 
 previous_mapped_port=""
 
@@ -22,11 +62,17 @@ while true ; do
         if [[ "$mapped_port" != "$previous_mapped_port" ]]; then
             echo "Changing qBittorrent port to $mapped_port"
 
-            # Change qBittorrent port
-            qbittorrent --torrenting-port=$mapped_port
+            # Get the qBittorrent command
+            qbittorrent_command=$(get_qbittorrent_command)
+            if [ $? -eq 0 ]; then
+                # Change qBittorrent port
+                $qbittorrent_command$mapped_port
 
-            # Update the previous mapped port
-            previous_mapped_port="$mapped_port"
+                # Update the previous mapped port
+                previous_mapped_port="$mapped_port"
+            else
+                echo "Error: Unable to determine qBittorrent command."
+            fi
         else
             echo "Mapped port has not changed. Skipping qBittorrent port update."
         fi
