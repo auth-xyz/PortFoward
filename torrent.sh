@@ -57,6 +57,7 @@ while true ; do
     if [[ $mapping_info =~ Mapped\ public\ port\ ([0-9]+) ]]; then
         mapped_port="${BASH_REMATCH[1]}"
         echo "Mapped public port: $mapped_port"
+        notify-send "Port Fowarding" "Mapped public port: $mapped_port"
 
         # Check if the mapped port has changed
         if [[ "$mapped_port" != "$previous_mapped_port" ]]; then
